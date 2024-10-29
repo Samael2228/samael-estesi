@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import supabase from "./supabase";
 import Swal from "sweetalert2";
 import userStore from "./ZustandStore";
+import { useNavigate } from "react-router-dom";
 
 interface FormData {
   email: string;
@@ -30,6 +31,7 @@ const SignUpForm = () => {
 
   const setActiveUser = userStore((state) => state.setActiveUser);
   const fetchUserTrees = userStore((state) => state.fetchUserTrees);
+  const navigate = useNavigate();
 
   const validateForm = useCallback((formData: FormData): FormErrors => {
     const errors: FormErrors = {
@@ -119,7 +121,7 @@ const SignUpForm = () => {
                 .from('UserTree')
                 .insert([
                   {
-                    Userid: userId,
+                    user_id: userId,
                   },
                 ]);
 
@@ -127,7 +129,7 @@ const SignUpForm = () => {
                 .from('UserTree')
                 .insert([
                   {
-                    Userid: userId,
+                    user_id: userId,
                   },
                 ]);
 
@@ -140,6 +142,7 @@ const SignUpForm = () => {
               } else {
                 setActiveUser(userId);
                 fetchUserTrees(userId);
+                navigate("/home");
               }
             }
           } else {

@@ -33,9 +33,9 @@ const userStore = create<UserStoreState>()(
       },
       fetchUserTrees: async (userId: string) => {
         const { data, error } = await supabase
-          .from('userTrees')
+          .from('UserTree')
           .select("*")
-          .eq('userId', userId);
+          .eq('user_id', userId);
         if (error) {
           console.error("Error fetching user trees:", error);
           return;
