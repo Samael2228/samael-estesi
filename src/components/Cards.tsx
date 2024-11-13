@@ -1,66 +1,117 @@
-// Card.js
-import { useEffect, useState } from 'react';
-import './Card.css'; // Agrega estilos específicos para la card
+import { useState, useEffect } from 'react';
+import { UserTrees, Trees } from '../utils/interfaces';
 import supabase from '../utils/supabase';
 
+interface TreeCardProps {
+  tree: UserTrees;
+}
 
-// Componente TreeCard para manejar cada árbol individualmente
-const TreeCard = ({ tree, userId }) => {
-  const [timeLeft, setTimeLeft] = useState(24 * 60 * 60); // 24 horas en segundos
-  const [isHarvestReady, setIsHarvestReady] = useState(tree.harvest_boolean);
+const TreeCard = ({ tree }: TreeCardProps) => {
+  const [treeToShow, setTreeToShow] = useState<Trees | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!tree.harvest_boolean) {
-      const calculateTimeLeft = () => {
-        const now = new Date().getTime();
-        const nextHarvestTime = new Date(tree.created_at).getTime() + 24 * 60 * 60 * 1000; // 24 horas
-        const remainingTime = Math.max(0, Math.floor((nextHarvestTime - now) / 1000));
-        setTimeLeft(remainingTime);
-        setIsHarvestReady(remainingTime === 0);
+    const fetchTreeDetails = async () => {
+      if (tree.tree_id) {
+        const { data, error } = await supabase
+          .from('trees')
+          .select('*')
+          .eq('id', tree.tree_id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching tree details:', error);
+        } else {
+          setTreeToShow(data);
+        }
+      }
+    };
+
+    fetchTreeDetails();
+
+    const calculateTimeLeft = () => {
+      if (tree.last_harvest) {
+        const lastHarvestDate = new Date(tree.last_harvest);
+        const now = new Date();
+        const timeDiff = 24 * 60 * 60 * 1000 - (now.getTime() - lastHarvestDate.getTime());
+        return timeDiff > 0 ? timeDiff : 0;
+      }
+      return 24 * 60 * 60 * 1000;
+    };
+
+    setTimeLeft(calculateTimeLeft());
+
+    const interval = setInterval(() => {
+      setTimeLeft((prevTimeLeft) => {
+        if (prevTimeLeft && prevTimeLeft > 0) {
+          return prevTimeLeft - 1000;
+        } else {
+          clearInterval(interval);
+          return 0;
+        }
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [tree.tree_id, tree.last_harvest]);
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      const updateHarvestStatus = async () => {
+        const { error } = await supabase
+          .from('UserTree')
+          .update({ harvest_boolean: true })
+          .eq('id', tree.id);
+
+        if (error) {
+          console.error('Error updating harvest status:', error);
+        }
       };
 
-      calculateTimeLeft();
-      const interval = setInterval(() => {
-        calculateTimeLeft();
-      }, 1000);
-
-      return () => clearInterval(interval);
+      updateHarvestStatus();
     }
-  }, [tree]);
+  }, [timeLeft, tree.id]);
 
   const handleHarvest = async () => {
-    if (!isHarvestReady) return;
-
-    const newBalance = activeUser.balance + tree.oxygen_per_day;
-    await supabase
-      .from('Users')
-      .update({ balance: newBalance })
-      .eq('id', userId);
-
-    // Reinicia el timer y actualiza el estado de cosecha
-    setTimeLeft(24 * 60 * 60);
-    setIsHarvestReady(false);
-
-    // Actualiza el harvest_boolean en la base de datos
-    await supabase
+    const now = new Date();
+    const { error } = await supabase
       .from('UserTree')
-      .update({ harvest_boolean: false })
+      .update({ harvest_boolean: false, last_harvest: now.toISOString() })
       .eq('id', tree.id);
 
-    // Refresca los datos del usuario y los árboles
-    await fetchUserTree(userId);
+    if (error) {
+      console.error('Error updating harvest status:', error);
+    } else {
+      setTimeLeft(24 * 60 * 60 * 1000);
+    }
+  };
+
+  const formatTime = (milliseconds: number) => {
+    const totalSeconds = Math.floor(milliseconds / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
   return (
-    <div className="tree-card">
-      <img src={tree.image_url} alt={tree.name} />
-      <h3>{tree.name}</h3>
-      <p>Oxígeno por día: {tree.oxygen_per_day}</p>
-      <p>Precio: {tree.price}</p>
-      {isHarvestReady ? (
-        <button onClick={handleHarvest}>Cosechar</button>
+    <div className="relative">
+      {tree.tree_id === null ? (
+        <a className="flex flex-col bg-[#A9DEFB] border shadow-sm rounded-xl hover:shadow-lg focus:outline-none focus:shadow-lg transition overflow-hidden" href="#">
+          <img className="rounded-xl" src='https://mdxknhyxybkumqvtveag.supabase.co/storage/v1/object/public/tree_images/spot.png?t=2024-11-03T22%3A25%3A30.666Z'></img>
+        </a>
       ) : (
-        <p>Tiempo restante para cosechar: {`${Math.floor(timeLeft / 3600)}h ${Math.floor((timeLeft % 3600) / 60)}m ${timeLeft % 60}s`}</p>
+        <div>
+          {treeToShow ? (
+            <a className="flex flex-col bg-[#A9DEFB] border shadow-sm rounded-xl hover:shadow-lg focus:outline-none focus:shadow-lg transition overflow-hidden" href="#">
+              <p className='absolute top-[5%] left-[5%] text-[1.5rem] sm:text-3xl text-white'>{timeLeft !== null ? formatTime(timeLeft) : '00:00:00'}</p>
+              <img className={` top-[-15%] lg:top-[-10%] right-[-4%] drop-shadow-xl w-1/3 lg:w-1/4 ${tree.harvest_boolean === false ? 'hidden' : 'absolute'}`} src='/02button.png' onClick={handleHarvest}></img>
+              <img className="rounded-xl" src={treeToShow.image_url}></img>
+            </a>
+          ) : (
+            <p>Cargando detalles del árbol...</p>
+          )}
+        </div>
       )}
     </div>
   );

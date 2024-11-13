@@ -5,23 +5,26 @@ import TreeCard from './Cards';
 
 
 const Home = () => {
-  const { activeUser, trees, setActiveUser, fetchUserTrees } = userStore();
-  const userId = "someUserId"; // Simula el ID del usuario actual
+  const trees = userStore((state) => state.trees);
+  const activeUser = userStore((state) => state.activeUser);
+  const SetActiveUser = userStore((state) => state.setActiveUser);
 
-  useEffect(() => {
-    if (userId) {
-      setActiveUser(userId);
-      fetchUserTrees(userId);
-    }
-  }, [userId, setActiveUser, fetchUserTrees]);
+
+   useEffect(() => {
+    SetActiveUser(activeUser?.id);
+   }, [activeUser]);
 
   return (
-    <div>
-      <h1>Bienvenido {activeUser ? activeUser.name : "Usuario"}</h1>
-      <div className="tree-list">
+    <div className='w-full h-full'>
+        <div className='mt-5 ml-5'>
+        <p className='text-5xl lg:text-7xl font-semibold '>Tus arboles</p>
+      <p className='text-xl lg:text-2xl'>lts oxigeno: {activeUser?.balance}</p>
+      <p className='text-xl lg:text-2xl'>Parcelas: {activeUser?.spots}</p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-10 w-full my-28 p-8">
         {trees.length > 0 ? (
           trees.map((tree) => (
-            <TreeCard key={tree.id} tree={tree} userId={userId} />
+            <TreeCard tree={tree} key={tree.id} />
           ))
         ) : (
           <p>No tienes árboles en tus parcelas aún.</p>
