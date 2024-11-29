@@ -23,5 +23,6 @@ export interface Trees {
     email: string;
     balance: number;
     spots: number;
+    wallet_address: string;
   }
   

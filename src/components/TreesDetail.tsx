@@ -14,7 +14,7 @@ const TreeDetail = () => {
   const decrementSpotAndUpdateTrees = userStore((state) => state.decrementSpotAndUpdateTrees);
   let balance = activeUser?.balance;
   const navigate = useNavigate();
-
+ const parcelaID = "45624e95-31c2-4021-be0b-4027e32ced51"
   useEffect(() => {
     const fetchTreeDetails = async () => {
       setLoading(true);
@@ -44,6 +44,48 @@ const TreeDetail = () => {
   };
 
   const buyTree = async () => { 
+    if (activeUser && treeId === parcelaID) {
+     if (treeToShow && balance && balance >= treeToShow?.price) {
+      const { error: userTreeError1 } = await supabase
+                .from('UserTree')
+                .insert([
+                  {
+                    user_id: activeUser.id,
+                  },
+                ]);
+
+                await supabase
+                .from('transactions')
+                  .insert([
+                    { user_id: activeUser.id, amount: treeToShow.price, transaction_type: 'purchase', status: 'completed' },
+                  ])
+                  .select();
+      if (userTreeError1) {
+        console.error('Error creating user tree:', userTreeError1);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Error creating user tree.',
+        });
+      } else {
+        Swal.fire({
+          icon: 'success',
+          title: '¡Felicidades!',
+          text: 'Has comprado una nueva parcela.',
+        });
+
+        navigate('/home');
+      }
+    }
+    else {
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'No tienes suficiente saldo para comprar esta parcela.',
+      });
+    }
+    return;
+    }
     if (activeUser && activeUser.spots > 0) {
       if (treeToShow && balance && balance >= treeToShow?.price) {
         const now = new Date();
@@ -52,7 +94,7 @@ const TreeDetail = () => {
           .update({ tree_id: treeToShow.id, purchase_date: now.toISOString(), last_harvest: now.toISOString() })
           .eq('user_id', activeUser.id)
           .is('tree_id', null)
-          .order('created_at', { ascending: true }) // Add order clause
+          .order('created_at', { ascending: true })
           .limit(1)
           .select();
 
@@ -77,14 +119,23 @@ const TreeDetail = () => {
             text: 'Has comprado un nuevo árbol.',
           });
           decrementSpotAndUpdateTrees();
-          await supabase
+          const { error: transactionError } = await supabase
             .from('transactions')
             .insert([
               { user_id: activeUser.id, amount: treeToShow.price, transaction_type: 'purchase', status: 'completed' },
-            ])
-            .select();
+            ]);
+
+          if (transactionError) {
+            console.error('Error creating transaction:', transactionError);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'Error creating transaction.',
+            });
+          } else {
           navigate('/home');
         }
+      }
       } else {
         Swal.fire({
           icon: 'error',

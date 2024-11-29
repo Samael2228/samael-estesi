@@ -60,6 +60,7 @@ const Market = () => {
         <p className='text-xl lg:text-2xl'>Parcelas: {activeUser?.spots}</p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-10 w-full my-28 p-8">
+        
         {trees.length > 0 ? (
           trees.map((tree) => (
             <MarketCard tree={tree} key={tree.id} />

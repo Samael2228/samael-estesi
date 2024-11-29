@@ -10,6 +10,7 @@ interface UserStoreState {
   fetchUserTrees: (userId: string) => Promise<void>;
   subscribeToChanges: () => void;
   decrementSpotAndUpdateTrees: () => void;
+  decrementBalance: (value: number) => Promise<void>;
 }
 
 const userStore = create<UserStoreState>()(
@@ -122,6 +123,7 @@ const userStore = create<UserStoreState>()(
           }
           return state;
         });
+      
 
         const fetchUpdatedTrees = async () => {
           const { activeUser } = get();
@@ -139,6 +141,28 @@ const userStore = create<UserStoreState>()(
         };
 
         fetchUpdatedTrees();
+      },
+      decrementBalance: async (value: number) => {
+        const { activeUser } = get();
+        if (activeUser) {
+          const newBalance = activeUser.balance - value;
+          if (newBalance < 0) {
+            console.error("Insufficient balance");
+            return;
+          }
+
+          const { error } = await supabase
+            .from('Users')
+            .update({ balance: newBalance })
+            .eq('id', activeUser.id);
+
+          if (error) {
+            console.error("Error updating balance:", error);
+            return;
+          }
+
+          set({ activeUser: { ...activeUser, balance: newBalance } });
+        }
       },
     }),
     {

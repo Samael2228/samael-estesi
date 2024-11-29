@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { UserTrees, Trees } from '../utils/interfaces';
 import supabase from '../utils/supabase';
+import { useNavigate } from 'react-router-dom';
 
 interface TreeCardProps {
   tree: UserTrees;
@@ -9,7 +10,7 @@ interface TreeCardProps {
 const TreeCard = ({ tree }: TreeCardProps) => {
   const [treeToShow, setTreeToShow] = useState<Trees | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchTreeDetails = async () => {
       if (tree.tree_id) {
@@ -72,7 +73,8 @@ const TreeCard = ({ tree }: TreeCardProps) => {
     }
   }, [timeLeft, tree.id]);
 
-  const handleHarvest = async () => {
+  const handleHarvest = async (e: React.MouseEvent<HTMLImageElement>) => {
+    e.stopPropagation();
     const now = new Date();
     const { error } = await supabase
       .from('UserTree')
@@ -97,16 +99,16 @@ const TreeCard = ({ tree }: TreeCardProps) => {
   return (
     <div className="relative">
       {tree.tree_id === null ? (
-        <a className="flex flex-col bg-[#A9DEFB] border shadow-sm rounded-xl hover:shadow-lg focus:outline-none focus:shadow-lg transition overflow-hidden" href="#">
+        <div className="flex flex-col bg-[#A9DEFB] border shadow-sm rounded-xl hover:shadow-lg focus:outline-none focus:shadow-lg transition overflow-hidden">
           <img className="rounded-xl" src='https://mdxknhyxybkumqvtveag.supabase.co/storage/v1/object/public/tree_images/spot.png?t=2024-11-03T22%3A25%3A30.666Z'></img>
-        </a>
+        </div>
       ) : (
         <div>
           {treeToShow ? (
-            <a className="flex flex-col bg-[#A9DEFB] border shadow-sm rounded-xl hover:shadow-lg focus:outline-none focus:shadow-lg transition overflow-hidden" href="#">
+            <a className="flex flex-col bg-[#A9DEFB] border shadow-sm rounded-xl hover:shadow-lg focus:outline-none focus:shadow-lg transition overflow-hidden">
               <p className='absolute top-[5%] left-[5%] text-[1.5rem] sm:text-3xl text-white'>{timeLeft !== null ? formatTime(timeLeft) : '00:00:00'}</p>
-              <img className={` top-[-15%] lg:top-[-10%] right-[-4%] drop-shadow-xl w-1/3 lg:w-1/4 ${tree.harvest_boolean === false ? 'hidden' : 'absolute'}`} src='/02button.png' onClick={handleHarvest}></img>
-              <img className="rounded-xl" src={treeToShow.image_url}></img>
+              <img className={` top-[-15%] lg:top-[-10%] right-[-4%] cursor-pointer drop-shadow-xl w-1/3 lg:w-1/4 ${tree.harvest_boolean === false ? 'hidden' : 'absolute'}`} src='/02button.png' onClick={handleHarvest}></img>
+              <img className="rounded-xl" src={treeToShow.image_url} onClick={()=>navigate(`/treeDetail/${tree.tree_id}`)}></img>
             </a>
           ) : (
             <p>Cargando detalles del árbol...</p>

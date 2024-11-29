@@ -165,17 +165,25 @@ const SignUpForm = () => {
   }, [formErrors, user, setActiveUser, fetchUserTrees]);
 
   return (
-    <div>
-      <form onSubmit={handleSubmit} className="bg-white p-3 lg:p-5 m-5 mb-20 rounded-lg">
-        <div className="grid gap-6 mb-6 md:grid-cols-2 ">
+      <section className="bg-gray-50 font-Manrope w-full">
+      <div className="flex flex-col items-center justify-center px-6 pb-8 mx-auto md:h-screen lg:pb-14">
+        <div className="flex justify-center">
+          <img className="-mb-[20%]" src="/" alt="logo" />
+        </div>
+        <div className="w-full bg-white rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
+          <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
+            <h1 className="text-xl font-semibold leading-tight tracking-tight text-text-50 md:text-2xl">
+              Crea una cuenta
+            </h1>
+      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
           <div>
-            <label htmlFor="full_name" className="block mb-2 text-sm font-medium text-text-50 dark:text-white">
+            <label htmlFor="full_name" className="block mb-2 text-sm font-medium text-text-50">
               Nombre Completo
             </label>
             <input
               type="text"
               id="full_name"
-              className="bg-gray-50 border border-gray-300 text-text-50 text-sm rounded-lg focus:ring-secondary-50 focus:border-secondary-50 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-secondary-50 dark:focus:border-secondary-50"
+              className="bg-gray-50 border border-gray-300 text-text-50 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
               placeholder="John Doe"
               required
               name="full_name"
@@ -184,15 +192,14 @@ const SignUpForm = () => {
             />
             {formErrors.full_name && <p className="text-red-500 text-xs">{formErrors.full_name}</p>}
           </div>
-        </div>
         <div className="mb-6">
-          <label htmlFor="email" className="block mb-2 text-sm font-medium text-text-50 dark:text-white">
+          <label htmlFor="email" className="block mb-2 text-sm font-medium text-text-50">
             Correo
           </label>
           <input
             type="email"
             id="email"
-            className="bg-gray-50 border border-gray-300 text-text-50 text-sm rounded-lg focus:ring-secondary-50 focus:border-secondary-50 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-secondary-50 dark:focus:border-secondary-50"
+            className="bg-gray-50 border border-gray-300 text-text-50 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
             placeholder="john.doe@company.com"
             required
             name="email"
@@ -202,13 +209,13 @@ const SignUpForm = () => {
           {formErrors.email && <p className="text-red-500 text-xs">{formErrors.email}</p>}
         </div>
         <div className="mb-6">
-          <label htmlFor="password" className="block mb-2 text-sm font-medium text-text-50 dark:text-white">
+          <label htmlFor="password" className="block mb-2 text-sm font-medium text-text-50">
             Contraseña
           </label>
           <input
             type="password"
             id="password"
-            className="bg-gray-50 border border-gray-300 text-text-50 text-sm rounded-lg focus:ring-secondary-50 focus:border-secondary-50 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-secondary-50 dark:focus:border-secondary-50"
+            className="bg-gray-50 border border-gray-300 text-text-50 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
             placeholder="•••••••••"
             required
             name="password"
@@ -220,13 +227,16 @@ const SignUpForm = () => {
 
         <button
           type="submit"
-          className="disabled:cursor-not-allowed disabled:bg-secondary-100 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+          className="disabled:cursor-not-allowed disabled:bg-secondary-100 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center"
           disabled={!Object.values(formErrors).every((error) => error === "") || !Object.values(user).every((value) => value)}
         >
           Crear Usuario
         </button>
       </form>
-    </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };
 

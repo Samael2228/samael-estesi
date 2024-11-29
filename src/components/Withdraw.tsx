@@ -1,92 +1,67 @@
-import { useState, useCallback } from "react";
-import supabase from "./supabase";
+import { useState, useCallback, useEffect } from "react";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
-import userStore from "./ZustandStore";
+import userStore from "../utils/ZustandStore";
+import supabase from "../utils/supabase";
 
-interface LoginData {
-  email: string;
-  password: string;
+interface WithdrawData {
+  amount: number;
+  lts: number;
 }
 
-interface LoginErrors {
-  email: string;
-  password: string;
-}
-
-const Login = () => {
+const Withdraw = () => {
   const navigate = useNavigate();
-  const setActiveUser = userStore((state) => state.setActiveUser);
-  const  fetchUserTrees = userStore((state) => state. fetchUserTrees);
+  const activeUser = userStore((state) => state.activeUser);
+  const decrementBalance = userStore((state) => state.decrementBalance);
 
-  const [logUser, setLogUser] = useState<LoginData>({
-    email: "",
-    password: "",
-  });
-  const [loginErrors, setLoginErrors] = useState<LoginErrors>({
-    email: "",
-    password: "",
+  const [withdraw, setWithdraw] = useState<WithdrawData>({
+    amount: 0,
+    lts: 0,
   });
 
-  const validateForm = useCallback((formData: LoginData): LoginErrors => {
-    const errors: LoginErrors = { email: "", password: "" };
-
-    // Validar email
-    if (!formData.email) {
-      errors.email = "El correo electrónico es obligatorio.";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = "El correo electrónico no es válido.";
-    }
-
-    // Validar password
-    if (!formData.password) {
-      errors.password = "La contraseña es obligatoria.";
-    } else if (formData.password.length < 6) {
-      errors.password = "La contraseña debe tener al menos 6 caracteres.";
-    }
-
-    return errors;
-  }, []);
+  useEffect(() => {
+    const amount = withdraw.lts / 100;
+    setWithdraw((prevWithdraw) => ({ ...prevWithdraw, amount }));
+  }, [withdraw.lts]);
 
   const handleChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
       const { name, value } = event.target;
-      const updatedUser = { ...logUser, [name]: value };
-      setLogUser(updatedUser);
-      setLoginErrors(validateForm(updatedUser));
+      const updatedWithdraw = { ...withdraw, [name]: parseFloat(value) };
+      setWithdraw(updatedWithdraw);
     },
-    [logUser, validateForm]
+    [withdraw]
   );
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
-
-      if (Object.values(loginErrors).every((error) => error === "")) {
+      if (withdraw.lts > 0 && activeUser && withdraw.lts <= activeUser?.balance) {
         try {
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email: logUser.email,
-            password: logUser.password,
-          });
+          const { error } = await supabase.from("transactions").insert([
+            {
+              user_id: activeUser?.id,
+              amount: withdraw.lts,
+              transaction_type: "withdraw",
+              status: "pending",
+            },
+          ]);
 
           if (error) {
             Swal.fire({
               icon: "error",
-              title: "Oops...",
+              title: "Error",
               text: error.message,
             });
           } else {
             Swal.fire({
               icon: "success",
-              title: "Bienvenido",
-              text: "Inicio de sesión exitoso",
+              title: "¡Listo!",
+              text: "El retiro ha sido registrado, espera a que sea confirmado.",
             });
-            if (data) {
-              let IdUser = data.user.id;
-              setActiveUser(IdUser);
-              fetchUserTrees(IdUser);
+            decrementBalance(withdraw.lts);
             navigate("/home");
-          }}
+          }
         } catch (error) {
           console.log(error);
           Swal.fire({
@@ -95,65 +70,71 @@ const Login = () => {
             text: "Algo salió mal. Por favor, inténtalo de nuevo.",
           });
         }
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No tienes suficientes lts para retirar.",
+        });
       }
     },
-    [logUser, loginErrors, navigate]
+    [withdraw, activeUser, navigate]
   );
 
   return (
     <section className="bg-gray-50 font-Manrope w-full">
       <div className="flex flex-col items-center justify-center px-6 pb-8 mx-auto md:h-screen lg:pb-14">
-        <div className="flex justify-center">
-          <img className="-mb-[20%]" src="/" alt="logo" />
-        </div>
         <div className="w-full bg-white rounded-lg shadow md:mt-0 sm:max-w-md xl:p-0">
           <div className="p-6 space-y-4 md:space-y-6 sm:p-8">
             <h1 className="text-xl font-semibold leading-tight tracking-tight text-text-50 md:text-2xl">
-              Accede a tu cuenta
+              Retirar
             </h1>
+            <p>Balance: <span>{activeUser?.balance} lts</span></p>
             <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit}>
               <div>
+                <span>100 lts = 1 USDT</span>
+              </div>
+              <div>
                 <label
-                  htmlFor="email"
+                  htmlFor="lts"
                   className="block mb-2 text-sm font-medium text-text-50"
                 >
-                  Correo
+                  LTS a retirar
                 </label>
                 <input
-                  type="email"
-                  name="email"
-                  id="email"
-                  value={logUser.email}
+                  type="number"
+                  name="lts"
+                  id="lts"
+                  value={withdraw.lts}
                   onChange={handleChange}
                   className="bg-gray-50 border border-gray-300 text-text-50 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
-                  placeholder="nombre@email.com"
+                  placeholder="0.00"
                   required
                 />
               </div>
-              
               <div>
                 <label
-                  htmlFor="password"
+                  htmlFor="amount"
                   className="block mb-2 text-sm font-medium text-text-50"
                 >
-                  Contraseña
+                  Retiro en USDT
                 </label>
                 <input
-                  type="password"
-                  name="password"
-                  id="password"
-                  placeholder="••••••••"
-                  value={logUser.password}
+                  type="text"
+                  name="amount"
+                  id="amount"
+                  placeholder="0"
+                  value={withdraw.amount}
                   onChange={handleChange}
                   className="bg-gray-50 border border-gray-300 text-text-50 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5"
-                  required
+                  disabled
                 />
               </div>
               <button
                 type="submit"
                 className="disabled:cursor-not-allowed disabled:bg-secondary-100 text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm w-full sm:w-auto px-5 py-2.5 text-center"
               >
-                Iniciar Sesión
+                Retirar
               </button>
             </form>
           </div>
@@ -163,4 +144,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Withdraw;

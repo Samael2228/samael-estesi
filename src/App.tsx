@@ -10,6 +10,10 @@ import TreeDetail from './components/TreesDetail';
 import userStore from './utils/ZustandStore';
 import { useEffect } from 'react';
 import supabase from './utils/supabase';
+import Transactions from './components/transactions';
+import Withdraw from './components/withdraw';
+import Deposit from './components/deposit';
+import AdminDashboard from './components/AdminDashboard';
 
 function App() {
    const isActiveLogin = location.pathname === "/login";
@@ -37,7 +41,6 @@ function App() {
    }, [navigate]);
  
 
-   //todo Hacer que se reflejen los cambios de la base de datos en tiempo real
   return (
     <div className='h-full w-full'>
       <div className={`h-full w-full flex justify-center ${isActiveLogin || isActiveSignUp ? "hidden" : 'block'}`}>
@@ -45,6 +48,10 @@ function App() {
       </div>
     <Routes>
       <Route path="/" element={<SignUpForm />} />
+      <Route path="/transactions" element={< Transactions />} />
+      <Route path="/withdraw" element={<Withdraw />} />
+      <Route path="/deposit" element={<Deposit />} />
+      <Route path="/adminDashboard" element={<AdminDashboard />} />
       <Route path="/home" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/market" element={<Market />} />
